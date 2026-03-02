@@ -1,0 +1,62 @@
+# Unity ignore files
+[Library]
+[library]
+[Temp]
+[temp]
+[Obj]
+[obj]
+[Build]
+[build]
+[Builds]
+[builds]
+[Logs]
+[logs]
+[MemoryCaptures]
+[memorycaptures]
+[UserSettings]
+[usersettings]
+
+# Asset meta files must be kept, even if matching something above
+!/[Assets]/**/*.meta
+!/[assets]/**/*.meta
+
+# Unity3D Generated File On Crash Reports
+sysinfo.txt
+
+# Builds
+*.apk
+*.unitypackage
+*.app
+
+# Crashlytics generated file
+crashlytics-build.properties
+
+# Packed Addressables
+/[Assets]/[AddressableAssetsData]/[VideoConfig].json
+/[Assets]/[AddressableAssetsData]/[com].[unity].[addressables]/[AddressablesConfig].json
+
+# OS generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Visual Studio / Rider / VS Code
+.vscode/
+.vs/
+[Pp]ackages/
+[Bb]in/
+[Oo]bj/
+*.sln
+*.csproj
+*.unityproj
+.idea/
+*.userprefs
+*.vsmacros
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
