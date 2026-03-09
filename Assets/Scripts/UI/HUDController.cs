@@ -22,32 +22,22 @@ public class HUDController : MonoBehaviour
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject winPanel;
 
+    private PlayerStatusManager playerStatus;
     private Coroutine flashCoroutine;
-    private OxygenSystem playerOxygen;
 
     private void Start()
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
-            playerOxygen = player.GetComponent<OxygenSystem>();
-            if (playerOxygen != null)
+            playerStatus = player.GetComponent<PlayerStatusManager>();
+            if (playerStatus != null)
             {
-                playerOxygen.OnOxygenChanged += UpdateOxygen;
-                playerOxygen.OnOxygenWarning += HandleOxygenWarning;
-            }
-
-            HealthSystem health = player.GetComponent<HealthSystem>();
-            if (health != null) 
-            {
-                health.OnHealthChanged += UpdateHealth;
-                health.OnDeath += ShowGameOver;
-            }
-
-            BatterySystem battery = player.GetComponent<BatterySystem>();
-            if (battery != null)
-            {
-                battery.OnBatteryChanged += UpdateBattery;
+                playerStatus.OnOxygenChanged += UpdateOxygen;
+                playerStatus.OnOxygenWarning += HandleOxygenWarning;
+                playerStatus.OnHealthChanged += UpdateHealth;
+                playerStatus.OnBatteryChanged += UpdateBattery;
+                playerStatus.OnDeath += ShowGameOver;
             }
         }
 
@@ -108,9 +98,9 @@ public class HUDController : MonoBehaviour
     {
         while (true)
         {
-            if (playerOxygen == null || dangerOverlay == null) yield break;
+            if (playerStatus == null || dangerOverlay == null) yield break;
 
-            float oxygenPct = playerOxygen.GetOxygenPercentage();
+            float oxygenPct = playerStatus.GetOxygenPercentage();
             float currentFlashSpeed = Mathf.Lerp(maxFlashSpeed, minFlashSpeed, oxygenPct / 0.2f);
 
             float t = (Mathf.Sin(Time.time * currentFlashSpeed) + 1f) / 2f;
