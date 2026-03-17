@@ -90,8 +90,14 @@ public class NightMonsterAI : MonoBehaviour
         isHunting = false;
         Debug.Log("QUÁI VẬT ĐÃ BẮT ĐƯỢC BẠN!");
         
-        // Gọi Game Over thông qua HUD hoặc LevelManager
+        // Gọi Game Over thông qua HUD
         HUDController hud = FindObjectOfType<HUDController>();
         if (hud) hud.ShowGameOver();
+
+        // Khởi động lại màn chơi (Quy tắc GDD mới)
+        if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.RestartLevel();
+        }
     }
 }

@@ -17,6 +17,8 @@ public class SubmarineStation : MonoBehaviour
     [Header("Cấu hình Hồi phục")]
     [SerializeField] private float oxygenRegenRate = 20f;
     [SerializeField] private float batteryRegenRate = 5f;
+    [SerializeField] private ParticleSystem refillEffect; // Hiệu ứng nạp năng lượng
+    [SerializeField] private AudioClip refillSound;        // Âm thanh nạp năng lượng
 
     [Header("Ánh sáng")]
     [SerializeField] private UnityEngine.Rendering.Universal.Light2D submarineLight;
@@ -181,7 +183,11 @@ public class SubmarineStation : MonoBehaviour
 
         if (visualsToHide) visualsToHide.SetActive(false);
         playerController.enabled = false;
-        player.GetComponent<Rigidbody2D>().simulated = false;
+        
+        // Tắt nội suy trước khi tắt simulate để tránh giật (Jerk) do cơ chế Interpolation của Unity
+        Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
+        playerRb.interpolation = RigidbodyInterpolation2D.None;
+        playerRb.simulated = false;
 
         if (LeverUIController.Instance != null)
         {
@@ -190,13 +196,19 @@ public class SubmarineStation : MonoBehaviour
         }
 
         player.transform.SetParent(transform);
-        player.transform.localPosition = Vector3.zero;
+        // Không sử dụng Snap localPosition = Vector3.zero để tránh cú giựt màn hình
+
+        if (refillEffect) refillEffect.Play();
+        if (refillSound && AudioManager.Instance != null)
+            AudioManager.Instance.PlaySFX(refillSound);
     }
 
     private void ExitSubmarine()
     {
         isInside = false;
         if (visualsToHide) visualsToHide.SetActive(true);
+
+        if (refillEffect) refillEffect.Stop();
 
         playerController.enabled = true;
         player.GetComponent<Rigidbody2D>().simulated = true;

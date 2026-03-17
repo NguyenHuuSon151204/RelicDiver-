@@ -67,10 +67,12 @@ public class DeepSeaWorldManager : MonoBehaviour
     private void OnEnterBase() {
         Debug.Log("🏠 Đã về Căn cứ!");
         if (baseHighlight) baseHighlight.color = Color.green;
+        if (LevelManager.Instance != null) LevelManager.Instance.SetPlayerAtHomeBase(true);
     }
 
     private void OnExitBase() {
         if (baseHighlight) baseHighlight.color = Color.yellow;
+        if (LevelManager.Instance != null) LevelManager.Instance.SetPlayerAtHomeBase(false);
     }
 
     // --- LOGIC SINH CÁ ---

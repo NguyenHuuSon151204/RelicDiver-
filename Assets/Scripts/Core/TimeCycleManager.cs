@@ -52,12 +52,16 @@ public class TimeCycleManager : MonoBehaviour
             // Cập nhật đồng hồ UI
             UpdateClockUI(progress);
 
-            // Xử lý sự kiện ban đêm
+            // Xử lý sự kiện ban đêm (Chỉ kích hoạt nếu LevelManager cho phép)
             if (progress > 0.8f && !isNight)
             {
-                isNight = true;
-                OnNightFall?.Invoke();
-                Debug.Log("<color=blue>TRỜI ĐÃ TỐI:</color> Cẩn thận quái vật đêm!");
+                bool canSpawn = (LevelManager.Instance == null) || LevelManager.Instance.spawnNightMonster;
+                if (canSpawn)
+                {
+                    isNight = true;
+                    OnNightFall?.Invoke();
+                    Debug.Log("<color=blue>TRỜI ĐÃ TỐI:</color> Cẩn thận quái vật đêm!");
+                }
             }
         }
     }

@@ -1,20 +1,27 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using System;
 
 public class LevelManager : MonoBehaviour
 {
-    public static LevelManager Instance;
+    public static LevelManager Instance { get; private set; }
 
-    [Header("Cấu hình màn chơi")]
-    [SerializeField] private int requiredArtifacts = 3;
-    [SerializeField] private string nextSceneName;
+    [Header("--- Thông tin Màn chơi ---")]
+    public string levelName = "Màn chơi";
+    public int targetRelics = 3;
+    private int collectedRelics = 0;
 
-    private int collectedArtifactCount = 0;
-    private bool levelComplete = false;
+    [Header("--- Quy tắc Màn chơi ---")]
+    public bool allowSubmarine = true;
+    public bool spawnNightMonster = true;
+    public bool isTutorial = false;
 
-    public event Action<int, int> OnArtifactCollected; // (collected, total)
-    public event Action OnLevelComplete;
+    [Header("--- Trạng thái ---")]
+    private bool isLevelComplete = false;
+    private bool playerAtHomeBase = false;
+
+    // Sự kiện dành cho HUD và các hệ thống khác
+    public event System.Action<int, int> OnArtifactCollected; // (collected, total)
+    public event System.Action OnLevelComplete;
 
     private void Awake()
     {
@@ -22,14 +29,28 @@ public class LevelManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    public void AddArtifact()
+    public void AddRelic()
     {
-        if (levelComplete) return;
+        collectedRelics++;
+        Debug.Log($"<color=yellow>Nhặt vật phẩm:</color> {collectedRelics}/{targetRelics}");
 
-        collectedArtifactCount++;
-        OnArtifactCollected?.Invoke(collectedArtifactCount, requiredArtifacts);
+        // Kích hoạt sự kiện để HUD cập nhật
+        OnArtifactCollected?.Invoke(collectedRelics, targetRelics);
 
-        if (collectedArtifactCount >= requiredArtifacts)
+        // (Đã loại bỏ gọi Popup hướng dẫn hoàn thành nhiệm vụ ở đây vì hệ thống Cẩm nang Slideshow đã bao hàm nội dung đó)
+        if (isTutorial && collectedRelics >= targetRelics)
+        {
+            Debug.Log("<color=green>Đã đủ vật phẩm! Hãy bơi về Trạm Sáng Xanh.</color>");
+        }
+    }
+
+    // Hàm alias dành cho các script cũ
+    public void AddArtifact() => AddRelic();
+
+    public void SetPlayerAtHomeBase(bool atBase)
+    {
+        playerAtHomeBase = atBase;
+        if (atBase && collectedRelics >= targetRelics && !isLevelComplete)
         {
             CompleteLevel();
         }
@@ -37,21 +58,22 @@ public class LevelManager : MonoBehaviour
 
     private void CompleteLevel()
     {
-        levelComplete = true;
+        isLevelComplete = true;
+        Debug.Log($"<color=green>HOÀN THÀNH MÀN CHƠI: {levelName}!</color>");
+        
+        // Kích hoạt sự kiện thắng cuộc
         OnLevelComplete?.Invoke();
-        Debug.Log("Màn chơi hoàn thành! Đã thu thập đủ cổ vật.");
-    }
-
-    public void LoadNextLevel()
-    {
-        if (levelComplete && !string.IsNullOrEmpty(nextSceneName))
-        {
-            SceneManager.LoadScene(nextSceneName);
-        }
+        
+        // Thực hiện hiện UI Win thông qua HUD (HUDController đã đăng ký sự kiện này)
     }
 
     public void RestartLevel()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        Debug.Log("<color=red>Restart màn chơi...</color>");
+        // Restart scene hiện tại
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
+
+    public int GetCollectedCount() => collectedRelics;
+    public bool IsComplete() => isLevelComplete;
 }

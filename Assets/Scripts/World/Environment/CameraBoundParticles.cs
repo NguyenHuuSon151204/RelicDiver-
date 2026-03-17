@@ -6,7 +6,7 @@ public class CameraBoundParticles : MonoBehaviour
     private ParticleSystem ps;
     
     [Header("Cấu hình tối ưu")]
-    public float margin = 5f; // Tăng thêm lề để tránh hở khi bơi nhanh
+    public float margin = 15f; // Tăng lề rộng hơn nữa để bao phủ toàn bộ Camera
     public bool autoResizeShape = true;
     public float predictionPower = 0.5f; // Độ "nhô" về phía trước khi bơi nhanh
 
@@ -19,8 +19,17 @@ public class CameraBoundParticles : MonoBehaviour
         mainCam = Camera.main;
         ps = GetComponent<ParticleSystem>();
 
+        // Tự động cấu hình Renderer để luôn hiện trên cùng
+        var renderer = ps.GetComponent<ParticleSystemRenderer>();
+        if (renderer != null)
+        {
+            renderer.sortingOrder = 10;
+        }
+
         var main = ps.main;
         main.simulationSpace = ParticleSystemSimulationSpace.World;
+        // Chế độ Culling Mode để hạt không bao giờ bị ẩn đột ngột
+        main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
         
         lastCamPos = mainCam.transform.position;
         UpdateShapeScale();
@@ -30,13 +39,21 @@ public class CameraBoundParticles : MonoBehaviour
     {
         if (mainCam == null) return;
 
-        // 1. Tính toán vận tốc Camera
-        camVelocity = (mainCam.transform.position - lastCamPos) / Time.deltaTime;
+        // 1. Tính toán vận tốc Camera (Tránh chia cho 0 khi game pause)
+        if (Time.deltaTime > 0)
+        {
+            camVelocity = (mainCam.transform.position - lastCamPos) / Time.deltaTime;
+        }
+        else
+        {
+            camVelocity = Vector3.zero;
+        }
+        
         lastCamPos = mainCam.transform.position;
 
         // 2. Vị trí Particle system: Có đón đầu hướng đi
         Vector3 targetPos = mainCam.transform.position + (camVelocity * predictionPower);
-        targetPos.z = 0;
+        targetPos.z = -0.5f; // Đưa trục Z ra phía trước (Negative Z trong Unity 2D) để tránh Z-fighting với Background
         transform.position = targetPos;
 
         // 3. Chỉ cập nhật Shape khi cần

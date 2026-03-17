@@ -53,8 +53,11 @@ public class LeverUIController : MonoBehaviour
             OnLightLeverChanged(0.5f);
         }
         
-        // KHÔNG ép ẩn ở đây nữa để tránh ghi đè lệnh từ SubmarineStation.Start()
-        // Bạn hãy tắt speedLeverRoot chủ động trong Unity Inspector là được.
+        // Tự động ẩn thanh tốc độ tàu nếu màn chơi không dùng tàu ngầm (nhưng vẫn giữ đèn pin)
+        if (LevelManager.Instance != null && !LevelManager.Instance.allowSubmarine)
+        {
+            if (speedLeverRoot) speedLeverRoot.SetActive(false);
+        }
     }
 
     private void DisableNavigation(Slider slider)

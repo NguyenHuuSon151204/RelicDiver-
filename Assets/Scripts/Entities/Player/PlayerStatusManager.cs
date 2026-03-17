@@ -29,6 +29,7 @@ public class PlayerStatusManager : MonoBehaviour
 
     private DiverController diverController;
     private bool isOxygenWarning = false;
+    private bool isDead = false;
     private float speedBatteryDrain = 0f;
     private float lightBatteryDrain = 0f;
 
@@ -60,7 +61,7 @@ public class PlayerStatusManager : MonoBehaviour
         if (currentOxygen <= 0)
         {
             // Hết Oxy -> Trừ máu
-            TakeDamage(5f * Time.deltaTime);
+            TakeDamage(5f * Time.deltaTime, "Asphyxiation (Oxygen Depleted)");
             return;
         }
 
@@ -91,6 +92,10 @@ public class PlayerStatusManager : MonoBehaviour
         if (currentBattery <= 0) return;
 
         float totalDrain = baseBatteryDrain + speedBatteryDrain + lightBatteryDrain;
+        
+        // Nếu không dùng tàu ngầm, không trừ pin (giữ nguyên dung lượng cho đèn pin hoặc đơn giản là để nó đứng yên)
+        if (LevelManager.Instance != null && !LevelManager.Instance.allowSubmarine) return;
+
         currentBattery = Mathf.Max(0, currentBattery - totalDrain * Time.deltaTime);
         OnBatteryChanged?.Invoke(currentBattery, maxBattery);
 
@@ -105,11 +110,36 @@ public class PlayerStatusManager : MonoBehaviour
     public void SetLightBatteryDrain(float value) => lightBatteryDrain = value * 3f;
 
     // --- LOGIC MÁU ---
+    private string lastDamageSource = "Water Pressure"; // Default cause
+
     public void TakeDamage(float amount)
     {
+        if (isDead) return;
+        TakeDamage(amount, "Collision / Obstacle");
+    }
+
+    public void TakeDamage(float amount, string source)
+    {
+        if (isDead) return;
+
+        lastDamageSource = source;
         currentHealth = Mathf.Max(0, currentHealth - amount);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        if (currentHealth <= 0) OnDeath?.Invoke();
+        
+        if (currentHealth <= 0) 
+        {
+            isDead = true;
+            OnDeath?.Invoke();
+        }
+    }
+
+    public string GetLastDamageSource() => lastDamageSource;
+
+    public float GetCurrentDepth()
+    {
+        // Độ sâu tính từ mặt nước (Y=0) trở xuống. 
+        // Nếu Y càng âm thì độ sâu càng cao.
+        return Mathf.Max(0, -transform.position.y * 2f); // Nhân 2 để con số nhìn "sâu" hơn
     }
 
     public void Heal(float amount)

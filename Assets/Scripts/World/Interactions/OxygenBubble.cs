@@ -4,6 +4,7 @@ public class OxygenBubble : Interactable
 {
     [SerializeField] private float oxygenAmount = 20f;
     [SerializeField] private GameObject collectionEffect;
+    [SerializeField] private AudioClip collectSound;
 
     public override void Interact(GameObject interactor)
     {
@@ -24,7 +25,14 @@ public class OxygenBubble : Interactable
             
             if (collectionEffect != null)
             {
-                Instantiate(collectionEffect, transform.position, Quaternion.identity);
+                GameObject fx = Instantiate(collectionEffect, transform.position, Quaternion.identity);
+                ParticleSystem ps = fx.GetComponent<ParticleSystem>();
+                if (ps != null) ps.Play();
+            }
+
+            if (collectSound != null && AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySFX(collectSound);
             }
             
             Destroy(gameObject);

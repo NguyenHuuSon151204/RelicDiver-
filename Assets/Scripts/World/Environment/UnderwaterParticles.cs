@@ -5,27 +5,54 @@ public class UnderwaterParticles : MonoBehaviour
     [Header("Cấu hình Hạt")]
     [SerializeField] private ParticleSystem bubblesLead; // Bong bóng từ bình oxy
     [SerializeField] private ParticleSystem seaDust;    // Bụi biển lơ lửng
-    [SerializeField] private float surfaceY = 1.5f;     // Mực nước hiện tại
+    [SerializeField] private int sortingOrder = 10;      // Đảm bảo hiện trên cùng
 
-    private void Update()
+    private void Start()
     {
-        bool isUnderwater = transform.position.y < surfaceY;
+        // 1. Tự động thiết lập hiển thị cho cả 2 loại hạt
+        SetupRenderer(bubblesLead);
+        SetupRenderer(seaDust);
 
-        // Nếu dưới nước thì bật bụi biển
+        // 2. Kích hoạt toàn bộ ngay lập tức và giữ chúng luôn chạy
+        ActivateAllParticles();
+    }
+
+    private void SetupRenderer(ParticleSystem ps)
+    {
+        if (ps == null) return;
+        
+        var renderer = ps.GetComponent<ParticleSystemRenderer>();
+        if (renderer != null) renderer.sortingOrder = sortingOrder;
+
+        var main = ps.main;
+        // Chốt chặn cuối cùng: Không bao giờ được phép tự tắt (Always Simulate)
+        main.cullingMode = ParticleSystemCullingMode.AlwaysSimulate;
+        main.playOnAwake = true;
+
+        // Đưa trục Z của Particle System hơi lồi về phía Camera
+        Vector3 pos = ps.transform.localPosition;
+        pos.z = -0.5f; 
+        ps.transform.localPosition = pos;
+    }
+
+    private void ActivateAllParticles()
+    {
         if (seaDust != null)
         {
             var emission = seaDust.emission;
-            emission.enabled = isUnderwater;
+            emission.enabled = true;
+            seaDust.Play();
         }
 
-        // Nếu dưới nước và đang di chuyển thì phun bong bóng
         if (bubblesLead != null)
         {
             var emission = bubblesLead.emission;
-            DiverController controller = GetComponent<DiverController>();
-            
-            // Phun bong bóng khi lặn xuống hoặc bơi
-            emission.enabled = isUnderwater;
+            emission.enabled = true;
+            bubblesLead.Play();
         }
+
+        Debug.Log("<color=green>HUD: Đã kích hoạt vĩnh viễn Bụi biển và Bong bóng!</color>");
     }
+
+    // Đã gỡ bỏ Update() và biến SurfaceY để tránh lỗi bong bóng lúc có lúc không
 }
