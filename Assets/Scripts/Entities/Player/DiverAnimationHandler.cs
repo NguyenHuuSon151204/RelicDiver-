@@ -32,7 +32,7 @@ public class DiverAnimationHandler : MonoBehaviour
         if (!anim.gameObject.activeInHierarchy) return;
 
         // Lấy vận tốc hiện tại của thợ lặn
-        float currentSpeed = rb.velocity.magnitude;
+        float currentSpeed = rb.linearVelocity.magnitude;
 
         // Tính toán tốc độ Animation dựa trên vận tốc bơi
         float targetAnimSpeed = minAnimSpeed + (currentSpeed * speedMultiplier);

@@ -31,7 +31,8 @@ public class OpeningCutsceneManager : MonoBehaviour
     public Camera mainCamera;         
     public bool lockCameraAtStart = true;
 
-    private bool isCutsceneActive = true;
+    public static bool IsCutsceneActive { get; private set; }
+    private bool internalIsActive = true;
     private Vector3 initialCameraPos;
 
     private IEnumerator Start()
@@ -49,6 +50,7 @@ public class OpeningCutsceneManager : MonoBehaviour
 
         if (playCutscene)
         {
+            IsCutsceneActive = true;
             if (carrierBay != null) carrierBay.position = startPosition;
             SetupPlayerState(false);
 
@@ -147,7 +149,8 @@ public class OpeningCutsceneManager : MonoBehaviour
 
     private void EndCutscene()
     {
-        isCutsceneActive = false;
+        IsCutsceneActive = false;
+        internalIsActive = false;
         SetupPlayerState(true);
         SetCameraFollowActive(true);
         Debug.Log("🎮 Sẵn sàng chơi!");

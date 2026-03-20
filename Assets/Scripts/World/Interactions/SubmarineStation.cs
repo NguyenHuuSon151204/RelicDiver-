@@ -62,8 +62,8 @@ public class SubmarineStation : MonoBehaviour
         subRb.bodyType = RigidbodyType2D.Dynamic;
         subRb.mass = 1000f; // Khối lượng siêu nặng để không bị đẩy đi
         subRb.gravityScale = 0;
-        subRb.drag = 1.0f; // Giảm drag để tàu lướt tự nhiên hơn
-        subRb.angularDrag = 3f;
+        subRb.linearDamping = 1.0f; // Giảm drag để tàu lướt tự nhiên hơn
+        subRb.angularDamping = 3f;
         subRb.interpolation = RigidbodyInterpolation2D.Interpolate;
 
         subMoveSpeed = 15f; 
@@ -179,9 +179,9 @@ public class SubmarineStation : MonoBehaviour
             subRb.AddForce(moveInput * finalAccel, ForceMode2D.Force);
 
             // Giới hạn vận tốc tối đa
-            if (subRb.velocity.magnitude > finalSpeed)
+            if (subRb.linearVelocity.magnitude > finalSpeed)
             {
-                subRb.velocity = subRb.velocity.normalized * finalSpeed;
+                subRb.linearVelocity = subRb.linearVelocity.normalized * finalSpeed;
             }
         }
     }
@@ -201,7 +201,7 @@ public class SubmarineStation : MonoBehaviour
             targetScaleX = (activeInput.x > 0) ? Mathf.Abs(transform.localScale.y) : -Mathf.Abs(transform.localScale.y);
         }
 
-        float speedFactor = (subRb.velocity.magnitude / subMoveSpeed) + 0.5f;
+        float speedFactor = (subRb.linearVelocity.magnitude / subMoveSpeed) + 0.5f;
         float currentScaleX = Mathf.Lerp(submarineGraphics.localScale.x, targetScaleX, Time.fixedDeltaTime * flipSpeed * speedFactor);
         submarineGraphics.localScale = new Vector3(currentScaleX, submarineGraphics.localScale.y, submarineGraphics.localScale.z);
 
@@ -289,7 +289,7 @@ public class SubmarineStation : MonoBehaviour
         HUDController hud = FindObjectOfType<HUDController>();
         if (hud != null) hud.UnsubscribeFromSubmarine();
 
-        subRb.velocity = Vector2.zero;
+        subRb.linearVelocity = Vector2.zero;
         Debug.Log("<color=yellow>Đã rời tàu.</color>");
     }
 
@@ -329,7 +329,7 @@ public class SubmarineStation : MonoBehaviour
             OnBatteryChanged?.Invoke(currentBattery, maxBattery);
 
             // Nếu hết pin hoàn toàn, tàu sẽ bị trôi tự do (giảm tốc nhanh)
-            if (currentBattery <= 0) subRb.velocity *= 0.95f;
+            if (currentBattery <= 0) subRb.linearVelocity *= 0.95f;
         }
     }
 

@@ -5,7 +5,7 @@ public class InteractiveRock : MonoBehaviour
 {
     [Header("--- Cấu hình ---")]
     public GameObject hiddenItem;       // Vật phẩm giấu bên dưới
-    public float interactDistance = 3f;  // Khoảng cách thợ lặn có thể click
+    public float interactDistance = 4.5f;  // Khoảng cách thợ lặn có thể click (Tăng lên để dễ lật hơn)
     public bool isFake = false;         // Đá giả, không có đồ
 
     [Header("--- Hiệu ứng ---")]
@@ -67,7 +67,31 @@ public class InteractiveRock : MonoBehaviour
         }
         else
         {
-            Debug.Log("<color=yellow>Bạn đứng quá xa để lật tảng đá này!</color>");
+            Debug.Log($"<color=yellow>Bạn đứng quá xa ({dist:F1}m) để lật tảng đá này! Cần lại gần < {interactDistance}m</color>");
+        }
+    }
+
+    // 3. Hiệu ứng Hover: Khi di chuột vào thì hiện Highlight (nếu trong tầm)
+    void OnMouseEnter()
+    {
+        if (isOpened || player == null || glowEffect == null) return;
+        
+        float dist = Vector2.Distance(transform.position, player.position);
+        if (dist <= interactDistance)
+        {
+            glowEffect.SetActive(true);
+        }
+    }
+
+    void OnMouseExit()
+    {
+        if (isOpened || glowEffect == null) return;
+        
+        // Chỉ tắt nếu Update không đang ép nó bật (ở distance xa hơn)
+        float dist = Vector2.Distance(transform.position, player.position);
+        if (dist > glowDistance)
+        {
+            glowEffect.SetActive(false);
         }
     }
 

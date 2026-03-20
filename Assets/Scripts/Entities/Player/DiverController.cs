@@ -35,7 +35,7 @@ public class DiverController : MonoBehaviour
         rb.gravityScale = 0f;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate; 
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-        rb.drag = 2f; 
+        rb.linearDamping = 2f; 
         
         if (visualContainer == null) visualContainer = transform.Find("Graphics");
         if (visualContainer == null) visualContainer = transform; // Fail-safe
@@ -107,7 +107,7 @@ public class DiverController : MonoBehaviour
     private void HandlePowerLoss()
     {
         hasPower = false;
-        rb.drag = 3f;
+        rb.linearDamping = 3f;
     }
 
     public bool IsSprinting() => isSprinting && moveInput.magnitude > 0.1f;

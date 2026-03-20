@@ -22,7 +22,8 @@ public class CinemachineBoundaryNotify : MonoBehaviour
         // Nếu camera bị chặn ở biên
         bool isTouchingBoundary = Vector3.Distance(rawPos, finalPos) > 0.1f;
 
-        // Báo cho script Premium thực hiện hiệu ứng
-        warningUI.ShowWarning(isTouchingBoundary);
+        // Báo cho script Premium thực hiện hiệu ứng (Chỉ hiện nếu không trong Cutscene)
+        bool shouldShow = isTouchingBoundary && !OpeningCutsceneManager.IsCutsceneActive;
+        warningUI.ShowWarning(shouldShow);
     }
 }
