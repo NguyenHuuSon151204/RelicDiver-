@@ -9,7 +9,9 @@ public class HUDController : MonoBehaviour
     [SerializeField] private Slider oxygenSlider;
     [SerializeField] private Slider healthSlider;
     [SerializeField] private Slider batterySlider;
+    [SerializeField] private SegmentedStatBar batteryBar; // Thanh pin chia vạch mới
     [SerializeField] private TextMeshProUGUI artifactText;
+    [SerializeField] private TextMeshProUGUI photoText;
     [SerializeField] private TextMeshProUGUI currencyText;
 
     [Header("Timer UI")]
@@ -63,7 +65,14 @@ public class HUDController : MonoBehaviour
     [SerializeField] private Slider sfxSlider;
     [SerializeField] private Selectable firstButtonPause;
     [SerializeField] private Selectable firstButtonSettings;
+    [SerializeField] private GameObject gameplayHUDGroup; // Kéo nhóm các thanh Sliders, Pin, Text vào đây
+    public static HUDController Instance { get; private set; }
     private bool isPaused = false;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -100,16 +109,27 @@ public class HUDController : MonoBehaviour
         if (LevelManager.Instance != null)
         {
             LevelManager.Instance.OnArtifactCollected += UpdateArtifactCount;
+            LevelManager.Instance.OnPhotoTaken += UpdatePhotoCount;
             LevelManager.Instance.OnLevelComplete += ShowWinScreen;
 
             // Initialize Mission Text
-            UpdateMissionText($"Objective: Collect {LevelManager.Instance.targetRelics} relics and return to surface.");
+            string mission = $"Objective: Collect {LevelManager.Instance.targetRelics} relics";
+            if (LevelManager.Instance.targetPhotos > 0) mission += $" and take {LevelManager.Instance.targetPhotos} photos";
+            mission += " and return to surface.";
+            UpdateMissionText(mission);
 
             // Handle submarine UI
             if (batterySlider != null)
             {
                 batterySlider.gameObject.SetActive(LevelManager.Instance.allowSubmarine);
             }
+
+            // Chỉ ẩn thanh pin nếu hiện tại chưa ở trong tàu
+            if (batteryBar != null && currentSubmarine == null) 
+                batteryBar.gameObject.SetActive(false);
+
+            // Ban đầu ẩn text ảnh nếu không có nhiệm vụ ảnh
+            if (photoText != null) photoText.gameObject.SetActive(LevelManager.Instance.targetPhotos > 0);
         }
         else
         {
@@ -357,7 +377,25 @@ public class HUDController : MonoBehaviour
     private void UpdateArtifactCount(int collected, int required)
     {
         if (artifactText) artifactText.text = $"Relics: {collected}/{required}";
-        UpdateMissionText($"Relics Collected: {collected}/{required}");
+        UpdateCommonMissionText();
+    }
+
+    private void UpdatePhotoCount(int taken, int required)
+    {
+        if (photoText) photoText.text = $"Photos: {taken}/{required}";
+        UpdateCommonMissionText();
+    }
+
+    private void UpdateCommonMissionText()
+    {
+        if (LevelManager.Instance == null) return;
+        
+        string mission = $"Progress - relics: {LevelManager.Instance.GetCollectedCount()}/{LevelManager.Instance.targetRelics}";
+        if (LevelManager.Instance.targetPhotos > 0)
+        {
+            mission += $" | photos: {LevelManager.Instance.GetTakenPhotosCount()}/{LevelManager.Instance.targetPhotos}";
+        }
+        UpdateMissionText(mission);
     }
 
     private void ShowWinScreen()
@@ -403,9 +441,41 @@ public class HUDController : MonoBehaviour
         }));
     }
 
+    private SubmarineStation currentSubmarine;
+
+    public void SubscribeToSubmarine(SubmarineStation sub)
+    {
+        if (currentSubmarine != null) currentSubmarine.OnBatteryChanged -= UpdateBattery;
+        
+        currentSubmarine = sub;
+        currentSubmarine.OnBatteryChanged += UpdateBattery;
+        UpdateBattery(currentSubmarine.GetCurrentBattery(), currentSubmarine.GetMaxBattery());
+
+        // Hiện thanh pin khi vào tàu
+        if (batteryBar != null) batteryBar.gameObject.SetActive(true);
+    }
+
+    public void UnsubscribeFromSubmarine()
+    {
+        if (currentSubmarine != null)
+        {
+            currentSubmarine.OnBatteryChanged -= UpdateBattery;
+            currentSubmarine = null;
+        }
+
+        // Ẩn thanh pin khi rời tàu
+        if (batteryBar != null) batteryBar.gameObject.SetActive(false);
+
+        if (playerStatus != null)
+        {
+            UpdateBattery(playerStatus.currentBattery, playerStatus.maxBattery);
+        }
+    }
+
     private void UpdateBattery(float current, float max)
     {
         if (batterySlider) batterySlider.value = current / max;
+        if (batteryBar) batteryBar.UpdateValue(current, max);
     }
 
     private void UpdateCurrency(int amount)
@@ -558,5 +628,10 @@ public class HUDController : MonoBehaviour
                 yield return new WaitForSecondsRealtime(0.02f);
             }
         }
+    }
+
+    public void SetHUDVisible(bool visible)
+    {
+        if (gameplayHUDGroup != null) gameplayHUDGroup.SetActive(visible);
     }
 }

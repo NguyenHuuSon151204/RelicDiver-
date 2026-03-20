@@ -80,6 +80,7 @@ public class DialogueManager : MonoBehaviour
         dialogueActive = true;
         
         if (dialoguePanel) dialoguePanel.SetActive(true);
+        if (HUDController.Instance != null) HUDController.Instance.SetHUDVisible(false); // Ẩn HUD
         DisplayLine();
     }
 
@@ -158,6 +159,7 @@ public class DialogueManager : MonoBehaviour
     {
         dialogueActive = false;
         if (dialoguePanel) dialoguePanel.SetActive(false);
+        if (HUDController.Instance != null) HUDController.Instance.SetHUDVisible(true); // Hiện lại HUD
         OnDialogueEnd?.Invoke();
     }
 

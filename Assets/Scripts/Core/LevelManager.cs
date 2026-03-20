@@ -10,6 +10,9 @@ public class LevelManager : MonoBehaviour
     public int targetRelics = 3;
     private int collectedRelics = 0;
 
+    public int targetPhotos = 0;
+    private int takenPhotos = 0;
+
     [Header("--- Quy tắc Màn chơi ---")]
     public bool allowSubmarine = true;
     public bool spawnNightMonster = true;
@@ -21,6 +24,7 @@ public class LevelManager : MonoBehaviour
 
     // Sự kiện dành cho HUD và các hệ thống khác
     public event System.Action<int, int> OnArtifactCollected; // (collected, total)
+    public event System.Action<int, int> OnPhotoTaken;      // (taken, total)
     public event System.Action OnLevelComplete;
 
     private void Awake()
@@ -47,10 +51,17 @@ public class LevelManager : MonoBehaviour
     // Hàm alias dành cho các script cũ
     public void AddArtifact() => AddRelic();
 
+    public void AddPhoto()
+    {
+        takenPhotos++;
+        Debug.Log($"<color=cyan>Đã chụp ảnh:</color> {takenPhotos}/{targetPhotos}");
+        OnPhotoTaken?.Invoke(takenPhotos, targetPhotos);
+    }
+
     public void SetPlayerAtHomeBase(bool atBase)
     {
         playerAtHomeBase = atBase;
-        if (atBase && collectedRelics >= targetRelics && !isLevelComplete)
+        if (atBase && collectedRelics >= targetRelics && takenPhotos >= targetPhotos && !isLevelComplete)
         {
             CompleteLevel();
         }
@@ -75,5 +86,6 @@ public class LevelManager : MonoBehaviour
     }
 
     public int GetCollectedCount() => collectedRelics;
+    public int GetTakenPhotosCount() => takenPhotos;
     public bool IsComplete() => isLevelComplete;
 }

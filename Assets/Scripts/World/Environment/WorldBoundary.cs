@@ -6,6 +6,7 @@ public class WorldBoundary : MonoBehaviour
     [Header("Cấu hình giới hạn")]
     public Vector2 boundarySize = new Vector2(40f, 25f);
     public float wallThickness = 2f;
+    public bool autoSetupCollider = true; // Thêm dòng này
 
     [Header("Cinemachine Support")]
     public PolygonCollider2D polyCollider; 
@@ -39,18 +40,21 @@ public class WorldBoundary : MonoBehaviour
             Debug.LogWarning("WorldBoundary: Nên để Scale của đối tượng này là (1,1,1) để tính toán chính xác nhất.");
         }
 
-        // 1. Setup Vùng Trigger cho Cinemachine
+        // 1. Setup Vùng Trigger cho Cinemachine (Tự động nạp điểm nếu được phép)
         if (polyCollider == null) polyCollider = GetComponent<PolygonCollider2D>();
         if (polyCollider == null) polyCollider = gameObject.AddComponent<PolygonCollider2D>();
         polyCollider.isTrigger = true;
 
-        Vector2 halfSize = boundarySize / 2f;
-        Vector2[] points = new Vector2[4];
-        points[0] = new Vector2(-halfSize.x, halfSize.y);
-        points[1] = new Vector2(halfSize.x, halfSize.y);
-        points[2] = new Vector2(halfSize.x, -halfSize.y);
-        points[3] = new Vector2(-halfSize.x, -halfSize.y);
-        polyCollider.points = points;
+        if (autoSetupCollider)
+        {
+            Vector2 halfSize = boundarySize / 2f;
+            Vector2[] points = new Vector2[4];
+            points[0] = new Vector2(-halfSize.x, halfSize.y);
+            points[1] = new Vector2(halfSize.x, halfSize.y);
+            points[2] = new Vector2(halfSize.x, -halfSize.y);
+            points[3] = new Vector2(-halfSize.x, -halfSize.y);
+            polyCollider.points = points;
+        }
 
         // 2. Setup Vùng Rắn
         UpdateWall("Wall_Top", new Vector2(0, boundarySize.y / 2 + wallThickness / 2), new Vector2(boundarySize.x + wallThickness * 2, wallThickness));

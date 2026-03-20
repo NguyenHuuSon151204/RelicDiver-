@@ -7192,14 +7192,37 @@ MonoBehaviour:
   oxygenSlider: {fileID: 1581770013}
   healthSlider: {fileID: 1290214942}
   batterySlider: {fileID: 0}
+  batteryBar: {fileID: 0}
   artifactText: {fileID: 661018757}
+  photoText: {fileID: 0}
   currencyText: {fileID: 0}
+  timerText: {fileID: 0}
+  timerNormalColor: {r: 1, g: 1, b: 1, a: 1}
+  timerWarningColor: {r: 1, g: 0, b: 0, a: 1}
+  missionText: {fileID: 0}
+  typewriterSpeed: 0.05
+  healthFillImage: {fileID: 0}
+  oxygenFillImage: {fileID: 0}
+  pulseSpeed: 5
+  healthPulseColor: {r: 1, g: 0, b: 0, a: 1}
+  oxygenPulseColor: {r: 0, g: 0.8, b: 1, a: 1}
   dangerOverlay: {fileID: 1353531662}
   minFlashSpeed: 2
   maxFlashSpeed: 10
   maxOverlayAlpha: 0.5
   gameOverPanel: {fileID: 0}
   winPanel: {fileID: 0}
+  winDetailsText: {fileID: 0}
+  loseDetailsText: {fileID: 0}
+  screenFaderGroup: {fileID: 0}
+  fadeDuration: 0.8
+  pausePanel: {fileID: 0}
+  settingsPanel: {fileID: 0}
+  musicSlider: {fileID: 0}
+  sfxSlider: {fileID: 0}
+  firstButtonPause: {fileID: 0}
+  firstButtonSettings: {fileID: 0}
+  gameplayHUDGroup: {fileID: 0}
 --- !u!114 &256113434
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9432,6 +9455,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   boundarySize: {x: 300, y: 200}
   wallThickness: 2
+  autoSetupCollider: 1
   polyCollider: {fileID: 347314220}
 --- !u!4 &347314219
 Transform:
@@ -25205,12 +25229,19 @@ MonoBehaviour:
   subAcceleration: 5
   flipSpeed: 6
   energyConsumptionMove: 2
+  energyConsumptionLight: 2
   oxygenRegenRate: 15
   batteryRegenRate: 10
+  baseRegenMultiplier: 5
+  maxBattery: 100
+  tangledNetsCount: 0
+  netRemovalUIPrefab: {fileID: 0}
+  refillEffect: {fileID: 0}
+  refillSound: {fileID: 0}
   submarineLight: {fileID: 967790346}
   visualsToHide: {fileID: 1106517656}
   submarineGraphics: {fileID: 2058063674}
-  startInside: 0
+  startInside: 1
 --- !u!4 &775653895
 Transform:
   m_ObjectHideFlags: 0
@@ -68363,6 +68394,7 @@ MonoBehaviour:
   interactionDistance: 2
   oxygenAmount: 20
   collectionEffect: {fileID: 0}
+  collectSound: {fileID: 0}
 --- !u!212 &1389054242
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -86495,7 +86527,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bubblesLead: {fileID: 1205448865}
   seaDust: {fileID: 1347610699}
-  surfaceY: 1.5
+  sortingOrder: 10
 --- !u!114 &1698889396
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -108703,8 +108735,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9896d6c4ad380e84194cd60fa951bddd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  requiredArtifacts: 3
-  nextSceneName: 
+  levelName: "M\xE0n ch\u01A1i"
+  targetRelics: 3
+  targetPhotos: 0
+  allowSubmarine: 1
+  spawnNightMonster: 1
+  isTutorial: 0
 --- !u!4 &2115650432
 Transform:
   m_ObjectHideFlags: 0

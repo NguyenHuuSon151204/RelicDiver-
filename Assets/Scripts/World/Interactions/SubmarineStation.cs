@@ -9,15 +9,28 @@ public class SubmarineStation : MonoBehaviour
     [SerializeField] private GameObject interactionUI;
 
     [Header("Chỉ số Tàu ngầm")]
-    [SerializeField] private float subMoveSpeed = 10f;
-    [SerializeField] private float subAcceleration = 5f;
+    [SerializeField] private float subMoveSpeed = 20f; // Tăng lên 20
+    [SerializeField] private float subAcceleration = 15f; // Tăng lên 15
     [SerializeField] private float flipSpeed = 3f; 
-    [SerializeField] private float energyConsumptionMove = 2f; 
+    [SerializeField] private float energyConsumptionMove = 5f; // Tiêu tốn khi di chuyển (tại tốc độ mặc định)
+    [SerializeField] private float energyConsumptionLight = 2f; // Tiêu tốn của đèn (tại độ sáng tối đa)
 
     [Header("Cấu hình Hồi phục")]
     [SerializeField] private float oxygenRegenRate = 20f;
     [SerializeField] private float batteryRegenRate = 5f;
-    [SerializeField] private ParticleSystem refillEffect; // Hiệu ứng nạp năng lượng
+    [SerializeField] private float baseRegenMultiplier = 5f; // Sạc nhanh gấp 5 lần tại căn cứ
+    [SerializeField] private float maxBattery = 100f;
+    private float currentBattery;
+    private bool isAtBase = false; // Trạng thái ở căn cứ
+    
+    [Header("Cơ chế Lưới đánh cá")]
+    [SerializeField] private int tangledNetsCount = 0;
+    private int maxTangledNets = 5;
+    [SerializeField] private GameObject netRemovalUIPrefab; // Kéo Panel gỡ lưới vào đây
+    
+    public System.Action<float, float> OnBatteryChanged;
+    
+    [SerializeField] private ParticleSystem refillEffect; 
     [SerializeField] private AudioClip refillSound;        // Âm thanh nạp năng lượng
 
     [Header("Ánh sáng")]
@@ -46,14 +59,21 @@ public class SubmarineStation : MonoBehaviour
     void Start()
     {
         subRb = GetComponent<Rigidbody2D>();
+        subRb.bodyType = RigidbodyType2D.Dynamic;
+        subRb.mass = 1000f; // Khối lượng siêu nặng để không bị đẩy đi
         subRb.gravityScale = 0;
-        subRb.drag = 2f;
+        subRb.drag = 1.0f; // Giảm drag để tàu lướt tự nhiên hơn
         subRb.angularDrag = 3f;
         subRb.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+        subMoveSpeed = 15f; 
+        subAcceleration = 10000f; // Lực đẩy siêu mạnh (10,000) để kéo khối lượng 1000
 
         if (submarineGraphics == null) submarineGraphics = transform.Find("Graphics");
         if (submarineGraphics == null) submarineGraphics = transform;
 
+        currentBattery = maxBattery;
+        tangledNetsCount = 0; // Reset lưới lúc bắt đầu
         InitializePlayer();
         if (player != null && startInside) ForceEnter();
 
@@ -77,7 +97,7 @@ public class SubmarineStation : MonoBehaviour
     public void ForceEnter()
     {
         InitializePlayer();
-        EnterSubmarine();
+        EnterSubmarine(true);
     }
 
     void Update()
@@ -101,9 +121,35 @@ public class SubmarineStation : MonoBehaviour
         {
             CheckForEntry();
             
-            if (isPlayerInRange && Input.GetKeyDown(interactKey))
+            // --- Hệ thống Lưới ---
+        if (!isInside && tangledNetsCount > 0 && isPlayerInRange)
+        {
+            if (interactionUI)
             {
-                EnterSubmarine();
+                interactionUI.SetActive(true);
+                var text = interactionUI.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                if (text) text.text = $"[E] Vào tàu | [R] Gỡ {tangledNetsCount} lưới";
+            }
+
+            if (Input.GetKeyDown(KeyCode.R)) // Đổi thành phím R để không trùng với E
+            {
+                OpenNetRemovalUI();
+            }
+        }
+        else if (isInside || !isPlayerInRange)
+        {
+            // Reset text về mặc định nếu cần
+            if (interactionUI && !isInside) 
+            {
+                 var text = interactionUI.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                 if (text) text.text = "Nhấn [E] để VÀO TÀU";
+            }
+        }
+
+            // --- Vào tàu (Luôn ưu tiên E) ---
+            if (!isInside && isPlayerInRange && Input.GetKeyDown(interactKey))
+            {
+                EnterSubmarine(false);
             }
         }
     }
@@ -118,11 +164,25 @@ public class SubmarineStation : MonoBehaviour
     {
         if (moveInput.magnitude > 0.1f)
         {
+            // Tinh toán tốc độ dựa trên công suất bình điện và số lượng lưới
+            float powerFactor = currentBattery > 0 ? 1f : 0.2f; // Nếu hết pin thì trôi cực chậm
+            float netFactor = 1f - (tangledNetsCount / (float)maxTangledNets); // Lưới quấn làm giảm tốc
+            netFactor = Mathf.Clamp(netFactor, 0, 1f);
+
             float leverSpeed = LeverUIController.Instance != null ? LeverUIController.Instance.GetSpeedLeverValue() : 1f;
-            float actualSpeed = subMoveSpeed * Mathf.Lerp(0.5f, 2f, leverSpeed);
+            float speedMultiplier = Mathf.Lerp(1f, 8f, leverSpeed); // Tăng dải tốc độ tối đa lên 8 lần cho "bốc"
             
-            // NHÂN THÊM subRb.mass để tàu luôn di chuyển mượt dù nặng bao nhiêu
-            subRb.AddForce(moveInput * actualSpeed * subAcceleration * subRb.mass);
+            float finalSpeed = subMoveSpeed * speedMultiplier * powerFactor * netFactor; 
+            float finalAccel = subAcceleration * speedMultiplier * powerFactor * netFactor;
+
+            // QUAN TRỌNG: Loại bỏ Time.fixedDeltaTime để lực đẩy đạt công suất tối đa
+            subRb.AddForce(moveInput * finalAccel, ForceMode2D.Force);
+
+            // Giới hạn vận tốc tối đa
+            if (subRb.velocity.magnitude > finalSpeed)
+            {
+                subRb.velocity = subRb.velocity.normalized * finalSpeed;
+            }
         }
     }
 
@@ -175,7 +235,7 @@ public class SubmarineStation : MonoBehaviour
         }
     }
 
-    private void EnterSubmarine()
+    private void EnterSubmarine(bool snapToCenter = false)
     {
         isInside = true;
         isPlayerInRange = false; 
@@ -184,7 +244,6 @@ public class SubmarineStation : MonoBehaviour
         if (visualsToHide) visualsToHide.SetActive(false);
         playerController.enabled = false;
         
-        // Tắt nội suy trước khi tắt simulate để tránh giật (Jerk) do cơ chế Interpolation của Unity
         Rigidbody2D playerRb = player.GetComponent<Rigidbody2D>();
         playerRb.interpolation = RigidbodyInterpolation2D.None;
         playerRb.simulated = false;
@@ -196,7 +255,11 @@ public class SubmarineStation : MonoBehaviour
         }
 
         player.transform.SetParent(transform);
-        // Không sử dụng Snap localPosition = Vector3.zero để tránh cú giựt màn hình
+        if (snapToCenter) player.transform.localPosition = Vector3.zero;
+
+        // Thông báo cho HUD dùng pin của tàu
+        HUDController hud = FindObjectOfType<HUDController>();
+        if (hud != null) hud.SubscribeToSubmarine(this);
 
         if (refillEffect) refillEffect.Play();
         if (refillSound && AudioManager.Instance != null)
@@ -221,6 +284,11 @@ public class SubmarineStation : MonoBehaviour
 
         player.transform.SetParent(null);
         player.transform.position = transform.position + Vector3.up * 1.5f;
+
+        // Trả lại quyền hiển thị pin cho thợ lặn
+        HUDController hud = FindObjectOfType<HUDController>();
+        if (hud != null) hud.UnsubscribeFromSubmarine();
+
         subRb.velocity = Vector2.zero;
         Debug.Log("<color=yellow>Đã rời tàu.</color>");
     }
@@ -231,10 +299,89 @@ public class SubmarineStation : MonoBehaviour
         {
             playerStatus.RestoreOxygen(oxygenRegenRate * Time.deltaTime);
 
+            // Lấy giá trị từ các cần gạt UI
+            float speedLever = LeverUIController.Instance != null ? LeverUIController.Instance.GetSpeedLeverValue() : 0f;
+            float lightLever = LeverUIController.Instance != null ? LeverUIController.Instance.GetLightLeverValue() : 0.5f;
+
+            float totalDrain = 0f;
+
+            // 1. Tính toán tiêu hao do Di Chuyển
             if (moveInput.magnitude > 0.1f)
-                playerStatus.RechargeBattery(-energyConsumptionMove * Time.deltaTime);
-            else
-                playerStatus.RechargeBattery(batteryRegenRate * Time.deltaTime);
+            {
+                // Tốc độ càng cao, càng tốn pin (tốn thêm dựa trên vị trí cần gạt)
+                totalDrain += energyConsumptionMove * Mathf.Max(0.5f, speedLever);
+            }
+
+            // 2. Tính toán tiêu hao do Đèn
+            totalDrain += energyConsumptionLight * lightLever;
+
+            // 3. Tính toán Hồi phục (Regen)
+            float totalRegen = 0f;
+            if (moveInput.magnitude < 0.1f && isAtBase) // Chỉ hồi pin khi đứng yên VÀ ở căn cứ
+            {
+                totalRegen = batteryRegenRate * baseRegenMultiplier;
+            }
+
+            // Cập nhật Pin thực tế: Drain - Regen
+            currentBattery += (totalRegen - totalDrain) * Time.deltaTime;
+            currentBattery = Mathf.Clamp(currentBattery, 0, maxBattery);
+            
+            OnBatteryChanged?.Invoke(currentBattery, maxBattery);
+
+            // Nếu hết pin hoàn toàn, tàu sẽ bị trôi tự do (giảm tốc nhanh)
+            if (currentBattery <= 0) subRb.velocity *= 0.95f;
+        }
+    }
+
+    // --- Các hàm hỗ trợ Lưới ---
+    public void AddTangledNet()
+    {
+        tangledNetsCount = Mathf.Clamp(tangledNetsCount + 1, 0, maxTangledNets);
+        Debug.Log($"<color=red>Tàu bị dính lưới! Tổng số: {tangledNetsCount}/{maxTangledNets}</color>");
+        
+        // Có thể thêm hiệu ứng rung lắc ở đây
+    }
+
+    private void OpenNetRemovalUI()
+    {
+        if (netRemovalUIPrefab == null) return;
+
+        // Tạo giao diện gỡ lưới
+        GameObject uiObj = Instantiate(netRemovalUIPrefab);
+        NetRemovalUI uiScript = uiObj.GetComponent<NetRemovalUI>();
+        if (uiScript)
+        {
+            uiScript.Setup(tangledNetsCount, this);
+        }
+    }
+
+    public void ClearNets()
+    {
+        tangledNetsCount = 0;
+        Debug.Log("<color=green>Đã gỡ sạch lưới! Tàu hoạt động bình thường.</color>");
+    }
+
+    public float GetCurrentBattery() => currentBattery;
+    public float GetMaxBattery() => maxBattery;
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        // Kiểm tra bằng Tag hoặc bằng Component HomeBaseTrigger (để chắc cú 100%)
+        if (collision.CompareTag("HomeBase") || collision.GetComponent<HomeBaseTrigger>() != null)
+        {
+            isAtBase = true;
+            if (refillEffect) refillEffect.Play();
+            Debug.Log("<color=cyan><b>🚀 Tàu đã vào trạm: Chế độ sạc nhanh KÍCH HOẠT!</b></color>");
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.CompareTag("HomeBase") || collision.GetComponent<HomeBaseTrigger>() != null)
+        {
+            isAtBase = false;
+            if (refillEffect) refillEffect.Stop();
+            Debug.Log("<color=orange><b>⚠️ Tàu đã rời trạm: Chế độ sạc nhanh TẮT!</b></color>");
         }
     }
 

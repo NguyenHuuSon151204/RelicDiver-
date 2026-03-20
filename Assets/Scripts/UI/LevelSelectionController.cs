@@ -16,6 +16,8 @@ public class LevelSelectionController : MonoBehaviour
         [Header("--- Tham chiếu UI (Kéo thả) ---")]
         public Button playButton;
         public GameObject lockIcon;
+        public Image previewDisplay; // Ô Image trên UI của Card
+        public Sprite levelScreenshot; // Ảnh bạn chụp màn chơi kéo vào đây
         public TextMeshProUGUI chapterText;
         public TextMeshProUGUI levelNameText;
         public TextMeshProUGUI detailsText;

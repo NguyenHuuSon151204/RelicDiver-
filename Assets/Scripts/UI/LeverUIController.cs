@@ -99,6 +99,7 @@ public class LeverUIController : MonoBehaviour
     }
 
     public float GetSpeedLeverValue() => speedLever ? speedLever.value : 0f;
+    public float GetLightLeverValue() => lightLever ? lightLever.value : 0f;
 
     private void OnDestroy()
     {

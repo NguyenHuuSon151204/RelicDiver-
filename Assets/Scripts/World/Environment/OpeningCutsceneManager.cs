@@ -34,8 +34,10 @@ public class OpeningCutsceneManager : MonoBehaviour
     private bool isCutsceneActive = true;
     private Vector3 initialCameraPos;
 
-    private void Start()
+    private IEnumerator Start()
     {
+        yield return null; // Đợi 1 frame để đảm bảo DialogueManager đã được kích hoạt bởi các script khác
+
         if (mainCamera == null) mainCamera = Camera.main;
         
         // Luôn ép người chơi vào tàu ngầm lúc đầu
@@ -57,7 +59,16 @@ public class OpeningCutsceneManager : MonoBehaviour
                 mainCamera.transform.position = initialCameraPos;
             }
 
-            StartCoroutine(StartOpeningSequence());
+            // Kiểm tra nếu có Dialog thì đợi xong mới chạy Cutscene
+            if (DialogueManager.Instance != null && DialogueManager.Instance.IsDialogueActive())
+            {
+                Debug.Log("<color=yellow>Đang đợi Dialog kết thúc để chạy Cutscene...</color>");
+                DialogueManager.Instance.OnDialogueEnd += StartCutsceneFromEvent;
+            }
+            else
+            {
+                StartCoroutine(StartOpeningSequence());
+            }
         }
         else
         {
@@ -67,6 +78,12 @@ public class OpeningCutsceneManager : MonoBehaviour
             ReleaseSubmarine();
             EndCutscene();
         }
+    }
+
+    private void StartCutsceneFromEvent()
+    {
+        DialogueManager.Instance.OnDialogueEnd -= StartCutsceneFromEvent;
+        StartCoroutine(StartOpeningSequence());
     }
 
     private void OpenDoorsImmediately()
@@ -153,6 +170,10 @@ public class OpeningCutsceneManager : MonoBehaviour
         if (subStation != null) subStation.enabled = canControl;
         
         Rigidbody2D rb = playerSubmarine.GetComponent<Rigidbody2D>();
-        if (rb != null && !canControl) rb.simulated = false;
+        if (rb != null)
+        {
+            // Bật lại vật lý khi bắt đầu chơi, tắt đi khi đang chạy cutscene
+            rb.simulated = canControl;
+        }
     }
 }
