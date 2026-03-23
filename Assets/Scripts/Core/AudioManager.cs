@@ -33,12 +33,14 @@ public class AudioManager : MonoBehaviour
     {
         if (musicSource) musicSource.volume = volume;
         PlayerPrefs.SetFloat(MUSIC_KEY, volume);
+        Debug.Log($"<color=cyan>Âm lượng Nhạc:</color> {volume * 100:F0}%");
     }
 
     public void SetSFXVolume(float volume)
     {
         if (sfxSource) sfxSource.volume = volume;
         PlayerPrefs.SetFloat(SFX_KEY, volume);
+        Debug.Log($"<color=yellow>Âm lượng Hiệu ứng:</color> {volume * 100:F0}%");
     }
 
     public float GetMusicVolume() => PlayerPrefs.GetFloat(MUSIC_KEY, 0.5f);
@@ -59,5 +61,33 @@ public class AudioManager : MonoBehaviour
         {
             sfxSource.PlayOneShot(clip);
         }
+    }
+
+    public void PlayMusic(AudioClip clip, bool loop = true)
+    {
+        if (musicSource == null || clip == null) return;
+        
+        if (musicSource.clip == clip && musicSource.isPlaying) return;
+
+        musicSource.clip = clip;
+        musicSource.loop = loop;
+        musicSource.Play();
+        Debug.Log($"<color=green>Đã kích hoạt phát nhạc:</color> {clip.name}");
+    }
+
+    public void StopMusic()
+    {
+        if (musicSource) musicSource.Stop();
+    }
+
+    public void SetMusicMute(bool mute)
+    {
+        if (musicSource) musicSource.mute = mute;
+    }
+
+    public void PlaySFXAtPoint(AudioClip clip, Vector3 position, float volume = 1f)
+    {
+        if (clip == null) return;
+        AudioSource.PlayClipAtPoint(clip, position, volume * GetSFXVolume());
     }
 }

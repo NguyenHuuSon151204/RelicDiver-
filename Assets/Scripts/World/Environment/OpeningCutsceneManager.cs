@@ -150,6 +150,15 @@ public class OpeningCutsceneManager : MonoBehaviour
         isCutsceneActive = false;
         SetupPlayerState(true);
         SetCameraFollowActive(true);
+
+        // KÍCH HOẠT CẢNH BÁO GIỚI HẠN VÀ NHIỆM VỤ SAU KHI VÀO GAME
+        CinemachineBoundaryNotify.canShowWarning = true;
+
+        if (MissionManager.Instance != null)
+        {
+            MissionManager.Instance.StartCurrentLevel();
+        }
+
         Debug.Log("🎮 Sẵn sàng chơi!");
     }
 

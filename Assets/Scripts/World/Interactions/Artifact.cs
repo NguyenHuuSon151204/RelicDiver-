@@ -9,6 +9,7 @@ public class Artifact : Interactable
     [SerializeField] private int creditValue = 150;
     [SerializeField] private string artifactName = "Cổ vật cổ đại";
     [SerializeField] private GameObject collectionEffect;
+    [SerializeField] private AudioClip collectSound;
 
     public override void Interact(GameObject interactor)
     {
@@ -28,16 +29,17 @@ public class Artifact : Interactable
             LevelManager.Instance.AddArtifact();
         }
 
-        // Cộng tiền mặt cho mọi loại cổ vật (đồ nghiên cứu vẫn có giá trị nền)
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.AddCurrency(creditValue);
-        }
+        // Cộng tiền mặt đã bị gỡ bỏ
 
         // Tạo hiệu ứng nếu có
         if (collectionEffect != null)
         {
             Instantiate(collectionEffect, transform.position, Quaternion.identity);
+        }
+
+        if (collectSound && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySFX(collectSound);
         }
 
         // Huỷ vật thể

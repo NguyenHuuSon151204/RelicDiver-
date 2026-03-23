@@ -47,10 +47,15 @@ public class CollectableItem : MonoBehaviour
 
     private void Collect()
     {
-        // Cộng điểm vào Level Manager
+        // Cộng điểm vào Level Manager và Mission Manager
         if (LevelManager.Instance != null)
         {
             LevelManager.Instance.AddRelic();
+        }
+
+        if (MissionManager.Instance != null)
+        {
+            MissionManager.Instance.AddProgress(itemName);
         }
 
         // Tạo hiệu ứng thu thập nếu có

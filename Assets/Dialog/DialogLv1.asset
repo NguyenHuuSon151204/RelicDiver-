@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1fa6e7475b5db645b383f0b31df8a81, type: 3}
+  m_Name: DialogLv1
+  m_EditorClassIdentifier: 
+  lines:
+  - characterName: "Ti\u1EBFn s\u0129"
+    content: Diver, look at the monitor. This is Echo-1, our training facility. I
+      need you to retrieve 3 sets of iron weights so I can calibrate the robotic
+      arms on your diving suit.
+    characterIcon: {fileID: 0}
+    isRightSide: 1
+  - characterName: "Th\u1EE3 l\u1EB7n"
+    content: The gear looks brand new, Doctor. I just hope it doesn't jam once we're
+      underwater.
+    characterIcon: {fileID: 0}
+    isRightSide: 0
+  - characterName: "Ti\u1EBFn s\u0129"
+    content: "That\u2019s exactly why we\u2019re testing. Move smoothly and try not
+      to scratch the new paint. I\u2019ll be monitoring your sensor data from here."
+    characterIcon: {fileID: 0}
+    isRightSide: 1

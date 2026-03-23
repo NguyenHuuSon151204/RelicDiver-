@@ -81,6 +81,10 @@ public class DialogueManager : MonoBehaviour
         
         if (dialoguePanel) dialoguePanel.SetActive(true);
         if (HUDController.Instance != null) HUDController.Instance.SetHUDVisible(false); // Ẩn HUD
+        
+        // Tắt nhạc nền khi nói chuyện
+        if (AudioManager.Instance != null) AudioManager.Instance.SetMusicMute(true);
+
         DisplayLine();
     }
 
@@ -160,6 +164,10 @@ public class DialogueManager : MonoBehaviour
         dialogueActive = false;
         if (dialoguePanel) dialoguePanel.SetActive(false);
         if (HUDController.Instance != null) HUDController.Instance.SetHUDVisible(true); // Hiện lại HUD
+        
+        // Bật lại nhạc nền khi hết nói chuyện
+        if (AudioManager.Instance != null) AudioManager.Instance.SetMusicMute(false);
+
         OnDialogueEnd?.Invoke();
     }
 

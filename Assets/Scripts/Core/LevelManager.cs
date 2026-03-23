@@ -7,11 +7,8 @@ public class LevelManager : MonoBehaviour
 
     [Header("--- Thông tin Màn chơi ---")]
     public string levelName = "Màn chơi";
-    public int targetRelics = 3;
+    [Header("--- Trạng thái ---")]
     private int collectedRelics = 0;
-
-    public int targetPhotos = 0;
-    private int takenPhotos = 0;
 
     [Header("--- Quy tắc Màn chơi ---")]
     public bool allowSubmarine = true;
@@ -36,13 +33,13 @@ public class LevelManager : MonoBehaviour
     public void AddRelic()
     {
         collectedRelics++;
-        Debug.Log($"<color=yellow>Nhặt vật phẩm:</color> {collectedRelics}/{targetRelics}");
+        Debug.Log($"<color=yellow>Nhặt vật phẩm:</color> {collectedRelics}/{GetTargetRelics()}");
 
         // Kích hoạt sự kiện để HUD cập nhật
-        OnArtifactCollected?.Invoke(collectedRelics, targetRelics);
+        OnArtifactCollected?.Invoke(collectedRelics, GetTargetRelics());
 
         // (Đã loại bỏ gọi Popup hướng dẫn hoàn thành nhiệm vụ ở đây vì hệ thống Cẩm nang Slideshow đã bao hàm nội dung đó)
-        if (isTutorial && collectedRelics >= targetRelics)
+        if (isTutorial && collectedRelics >= GetTargetRelics())
         {
             Debug.Log("<color=green>Đã đủ vật phẩm! Hãy bơi về Trạm Sáng Xanh.</color>");
         }
@@ -53,15 +50,13 @@ public class LevelManager : MonoBehaviour
 
     public void AddPhoto()
     {
-        takenPhotos++;
-        Debug.Log($"<color=cyan>Đã chụp ảnh:</color> {takenPhotos}/{targetPhotos}");
-        OnPhotoTaken?.Invoke(takenPhotos, targetPhotos);
+        // Tính năng chụp ảnh đã bị gỡ bỏ
     }
 
     public void SetPlayerAtHomeBase(bool atBase)
     {
         playerAtHomeBase = atBase;
-        if (atBase && collectedRelics >= targetRelics && takenPhotos >= targetPhotos && !isLevelComplete)
+        if (atBase && IsComplete() && !isLevelComplete)
         {
             CompleteLevel();
         }
@@ -86,6 +81,7 @@ public class LevelManager : MonoBehaviour
     }
 
     public int GetCollectedCount() => collectedRelics;
-    public int GetTakenPhotosCount() => takenPhotos;
-    public bool IsComplete() => isLevelComplete;
+    public int GetTargetRelics() => MissionManager.Instance != null ? MissionManager.Instance.levels[MissionManager.Instance.currentLevelIndex].requiredAmount : 0;
+    public int GetTakenPhotosCount() => 0;
+    public bool IsComplete() => MissionManager.Instance != null && MissionManager.Instance.IsMissionComplete();
 }

@@ -25,6 +25,10 @@ public class DiverController : MonoBehaviour
     private float targetScaleX = 1f;
     private PlayerStatusManager playerStatus;
     private bool hasPower = true;
+    
+    [Header("Ánh sáng")]
+    [SerializeField] private UnityEngine.Rendering.Universal.Light2D flashlight;
+    private float baseFlashlightIntensity = 1f;
 
     private void Awake()
     {
@@ -45,6 +49,8 @@ public class DiverController : MonoBehaviour
     {
         targetZAngle = rb.rotation;
         targetScaleX = transform.localScale.x;
+        
+        if (flashlight != null) baseFlashlightIntensity = flashlight.intensity;
     }
 
     public void SetLeverSpeedMultiplier(float value)
@@ -89,6 +95,12 @@ public class DiverController : MonoBehaviour
         // Thực hiện Lật (Flip) mượt mà bằng Lerp lên nốt Hình ảnh (Visuals)
         float newX = Mathf.Lerp(visualContainer.localScale.x, targetScaleX, Time.deltaTime * flipSpeed);
         visualContainer.localScale = new Vector3(newX, visualContainer.localScale.y, visualContainer.localScale.z);
+        
+        // CẬP NHẬT ĐỘ SÁNG ĐÈN PIN (Đồng bộ)
+        if (flashlight != null && AtmosphereMaster.Instance != null)
+        {
+            flashlight.intensity = baseFlashlightIntensity * AtmosphereMaster.Instance.GetBrightness();
+        }
     }
 
     private void FixedUpdate()

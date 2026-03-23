@@ -6,6 +6,8 @@ TagManager:
   tags:
   - HomeBase
   - Submarine
+  - Item
+  - Relic
   layers:
   - Default
   - TransparentFX

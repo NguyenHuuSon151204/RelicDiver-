@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1fa6e7475b5db645b383f0b31df8a81, type: 3}
+  m_Name: DialogLv2
+  m_EditorClassIdentifier: 
+  lines:
+  - characterName: "Th\u1EE3 l\u1EB7n"
+    content: The robotic arms worked perfectly, Aris. Those weights were no match
+      for me.
+    characterIcon: {fileID: 0}
+    isRightSide: 0
+  - characterName: "Ti\u1EBFn s\u0129"
+    content: Excellent. Now, look at this stratigraphic map. The Metropolis subway
+      is deeply flooded, and the structure is highly unstable.
+    characterIcon: {fileID: 0}
+    isRightSide: 1
+  - characterName: "Th\u1EE3 l\u1EB7n"
+    content: Smartphones, briefcases, watches... Why did the original survey team
+      leave all this behind?
+    characterIcon: {fileID: 0}
+    isRightSide: 0
+  - characterName: "Ti\u1EBFn s\u0129"
+    content: We'll find out once you bring them back. Go now, and be careful navigating
+      through the train cars.
+    characterIcon: {fileID: 0}
+    isRightSide: 0

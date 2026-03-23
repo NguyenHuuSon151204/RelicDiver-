@@ -29,7 +29,27 @@ public class AtmosphereMaster : MonoBehaviour
     public Volume underwaterVolume;
     public Camera mainCam;
 
+    public static AtmosphereMaster Instance { get; private set; }
+    private float brightnessMultiplier = 1f;
     private TimeCycleManager timeManager;
+
+    void Awake()
+    {
+        Instance = this;
+        // Mặc định là 1.0 nếu chưa có dữ liệu lưu
+        brightnessMultiplier = PlayerPrefs.GetFloat("Brightness", 1f);
+        
+        // Đề phòng trường hợp Slider lưu nhầm giá trị 0
+        if (brightnessMultiplier <= 0.05f) brightnessMultiplier = 1f;
+    }
+
+    public void SetBrightness(float value)
+    {
+        brightnessMultiplier = value;
+        PlayerPrefs.SetFloat("Brightness", value);
+    }
+
+    public float GetBrightness() => brightnessMultiplier;
 
     void Start()
     {

@@ -7,6 +7,8 @@ public class CinemachineBoundaryNotify : MonoBehaviour
     public PremiumWarningUI warningUI; // Sử dụng Script Premium thay vì GameObject đơn thuần
     private CinemachineVirtualCamera vcam;
 
+    public static bool canShowWarning = false; // Mặc định là tắt để tránh hiện lúc Cutscene
+
     void Start()
     {
         vcam = GetComponent<CinemachineVirtualCamera>();
@@ -22,7 +24,10 @@ public class CinemachineBoundaryNotify : MonoBehaviour
         // Nếu camera bị chặn ở biên
         bool isTouchingBoundary = Vector3.Distance(rawPos, finalPos) > 0.1f;
 
-        // Báo cho script Premium thực hiện hiệu ứng
-        warningUI.ShowWarning(isTouchingBoundary);
+        // CHỈ HIỆN CẢNH BÁO NẾU ĐÃ VÀO GAME (canShowWarning = true)
+        if (canShowWarning)
+            warningUI.ShowWarning(isTouchingBoundary);
+        else
+            warningUI.ShowWarning(false);
     }
 }

@@ -45,29 +45,34 @@ public class InteractiveRock : MonoBehaviour
 
     void Update()
     {
-        if (isOpened || player == null) return;
+        if (isOpened) return;
 
-        // 1. Hiệu ứng phát sáng khi lại gần
-        float dist = Vector2.Distance(transform.position, player.position);
-        if (glowEffect != null)
+        // 1. Hiệu ứng phát sáng khi lại gần (Chỉ chạy nếu có player)
+        if (player != null)
         {
-            glowEffect.SetActive(dist <= glowDistance);
+            float dist = Vector2.Distance(transform.position, player.position);
+            if (glowEffect != null)
+            {
+                glowEffect.SetActive(dist <= glowDistance);
+            }
         }
-    }
-
-    // 2. Click chuột để lật đá
-    void OnMouseDown()
-    {
-        if (isOpened || player == null) return;
-
-        float dist = Vector2.Distance(transform.position, player.position);
-        if (dist <= interactDistance)
+        else // Nếu không có player, đảm bảo hiệu ứng tắt
         {
-            OpenRock();
+            if (glowEffect != null)
+            {
+                glowEffect.SetActive(false);
+            }
         }
-        else
+
+        // 2. Tự kiểm tra Click chuột (Cách này nhạy và xuyên thấu tốt hơn OnMouseDown)
+        if (Input.GetMouseButtonDown(0))
         {
-            Debug.Log("<color=yellow>Bạn đứng quá xa để lật tảng đá này!</color>");
+            Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            if (rockCollider.OverlapPoint(mousePos))
+            {
+                OpenRock();
+                Debug.Log("<color=cyan>Đã lật đá thành công (Logic xuyên thấu)!</color>");
+            }
         }
     }
 

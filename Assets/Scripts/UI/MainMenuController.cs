@@ -35,6 +35,9 @@ public class MainMenuController : MonoBehaviour
     [Header("Level Selection")]
     [SerializeField] private GameObject levelSelectionPanel;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip menuMusic;
+
     private void Awake()
     {
         targetMenuPos = menuCenterPos; 
@@ -43,6 +46,18 @@ public class MainMenuController : MonoBehaviour
 
     private void Start()
     {
+        // DEBUG NHẠC NỀN
+        Debug.Log($"<color=white>MainMenu:</color> Đang kiểm tra nhạc... Music assigned: {menuMusic != null}, AudioManager exists: {AudioManager.Instance != null}");
+
+        if (menuMusic != null && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayMusic(menuMusic);
+            Debug.Log("<color=green>MainMenu:</color> Đã gọi lệnh PlayMusic!");
+        }
+        else if (AudioManager.Instance == null)
+        {
+            Debug.LogError("<color=red>MainMenu LỖI:</color> Không tìm thấy AudioManager trong Scene!");
+        }
         
         // Khởi động các Sliders theo giá trị đã lưu
         if (musicSlider && AudioManager.Instance != null)

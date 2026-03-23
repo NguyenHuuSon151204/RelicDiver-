@@ -80,9 +80,9 @@ public class TimeCycleManager : MonoBehaviour
         // Định dạng hiển thị 00:00
         timeText.text = string.Format("{0:00}:{1:00}", hours, minutes);
 
-        // Đổi màu đỏ khi sắp hết giờ (sau 20h)
-        if (hours >= 20) timeText.color = Color.red;
-        else timeText.color = Color.white;
+        // Đổi màu dựa trên thời gian (Sau 22h hoặc gần hết giờ)
+        if (hours >= 22) timeText.color = Color.red;
+        else timeText.color = new Color(0.1f, 1f, 0.1f); // Màu xanh lục tươi
     }
 
     public float GetTimeProgress() => currentTime / dayDurationSeconds;

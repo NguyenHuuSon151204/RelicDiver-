@@ -26,7 +26,8 @@ public class SubmarineStation : MonoBehaviour
     [Header("Cơ chế Lưới đánh cá")]
     [SerializeField] private int tangledNetsCount = 0;
     private int maxTangledNets = 5;
-    [SerializeField] private GameObject netRemovalUIPrefab; // Kéo Panel gỡ lưới vào đây
+    [SerializeField] private GameObject netRemovalUI;       // Kéo trực tiếp cái bảng NetRemovalPanel vào đây
+    [SerializeField] private GameObject[] visualNets;    // Kéo 5 lưới gắn sẵn trên tàu vào đây
     
     public System.Action<float, float> OnBatteryChanged;
     
@@ -52,6 +53,7 @@ public class SubmarineStation : MonoBehaviour
     private bool isPlayerInRange = false;
     private bool isInside = false;
     private float targetScaleX = 1f;
+    private float baseSubLightIntensity = 1f;
 
     [Header("Khởi đầu")]
     public bool startInside = false;
@@ -74,7 +76,14 @@ public class SubmarineStation : MonoBehaviour
 
         currentBattery = maxBattery;
         tangledNetsCount = 0; // Reset lưới lúc bắt đầu
+        
+        // Ẩn tất cả lưới lúc khởi đầu
+        if (visualNets != null) {
+            foreach(var net in visualNets) if(net) net.SetActive(false);
+        }
+
         InitializePlayer();
+        if (submarineLight != null) baseSubLightIntensity = submarineLight.intensity;
         if (player != null && startInside) ForceEnter();
 
         if (interactionUI) interactionUI.SetActive(false);
@@ -102,11 +111,20 @@ public class SubmarineStation : MonoBehaviour
 
     void Update()
     {
-        if (player == null) return;
-
         if (isInside)
         {
             moveInput = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")).normalized;
+
+            // HIỆN THÔNG BÁO NẾU BỊ KẸT TRONG TÀU
+            if (tangledNetsCount >= maxTangledNets)
+            {
+                if (interactionUI)
+                {
+                    interactionUI.SetActive(true);
+                    var text = interactionUI.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                    if (text) text.text = "<color=red>TÀU BỊ KẸT!</color> Nhấn [F] ra ngoài gỡ lưới";
+                }
+            }
 
             if (Input.GetKeyDown(interactKey))
             {
@@ -121,33 +139,24 @@ public class SubmarineStation : MonoBehaviour
         {
             CheckForEntry();
             
-            // --- Hệ thống Lưới ---
-        if (!isInside && tangledNetsCount > 0 && isPlayerInRange)
-        {
-            if (interactionUI)
+            // --- Hệ thống Lưới (Khi đã ở ngoài) ---
+            if (tangledNetsCount > 0 && isPlayerInRange)
             {
-                interactionUI.SetActive(true);
-                var text = interactionUI.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                if (text) text.text = $"[E] Vào tàu | [R] Gỡ {tangledNetsCount} lưới";
-            }
+                if (interactionUI)
+                {
+                    interactionUI.SetActive(true);
+                    var text = interactionUI.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                    if (text) text.text = $"[F] Vào tàu | [R] Gỡ {tangledNetsCount} lưới";
+                }
 
-            if (Input.GetKeyDown(KeyCode.R)) // Đổi thành phím R để không trùng với E
-            {
-                OpenNetRemovalUI();
+                if (Input.GetKeyDown(KeyCode.R)) 
+                {
+                    OpenNetRemovalUI();
+                }
             }
-        }
-        else if (isInside || !isPlayerInRange)
-        {
-            // Reset text về mặc định nếu cần
-            if (interactionUI && !isInside) 
-            {
-                 var text = interactionUI.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                 if (text) text.text = "Nhấn [E] để VÀO TÀU";
-            }
-        }
-
-            // --- Vào tàu (Luôn ưu tiên E) ---
-            if (!isInside && isPlayerInRange && Input.GetKeyDown(interactKey))
+            
+            // --- Vào tàu (Luôn ưu tiên F) ---
+            if (isPlayerInRange && Input.GetKeyDown(interactKey))
             {
                 EnterSubmarine(false);
             }
@@ -162,9 +171,16 @@ public class SubmarineStation : MonoBehaviour
 
     private void HandleMovement()
     {
+        // CHẶN DI CHUYỂN NẾU MẮC 5 LƯỚI
+        if (tangledNetsCount >= maxTangledNets)
+        {
+            subRb.velocity = Vector2.zero; // Dừng hẳn tàu
+            return;
+        }
+
         if (moveInput.magnitude > 0.1f)
         {
-            // Tinh toán tốc độ dựa trên công suất bình điện và số lượng lưới
+            // Tính toán tốc độ dựa trên công suất bình điện và số lượng lưới
             float powerFactor = currentBattery > 0 ? 1f : 0.2f; // Nếu hết pin thì trôi cực chậm
             float netFactor = 1f - (tangledNetsCount / (float)maxTangledNets); // Lưới quấn làm giảm tốc
             netFactor = Mathf.Clamp(netFactor, 0, 1f);
@@ -200,12 +216,10 @@ public class SubmarineStation : MonoBehaviour
         {
             targetScaleX = (activeInput.x > 0) ? Mathf.Abs(transform.localScale.y) : -Mathf.Abs(transform.localScale.y);
         }
+        
+        submarineGraphics.localScale = Vector3.Lerp(submarineGraphics.localScale, new Vector3(targetScaleX, submarineGraphics.localScale.y, submarineGraphics.localScale.z), Time.fixedDeltaTime * flipSpeed);
 
-        float speedFactor = (subRb.velocity.magnitude / subMoveSpeed) + 0.5f;
-        float currentScaleX = Mathf.Lerp(submarineGraphics.localScale.x, targetScaleX, Time.fixedDeltaTime * flipSpeed * speedFactor);
-        submarineGraphics.localScale = new Vector3(currentScaleX, submarineGraphics.localScale.y, submarineGraphics.localScale.z);
-
-        // KHÓA HƯỚNG UI
+        // 3. KHÓA HƯỚNG UI
         if (interactionUI != null && interactionUI.activeInHierarchy)
         {
             Vector3 uiScale = interactionUI.transform.localScale;
@@ -216,6 +230,12 @@ public class SubmarineStation : MonoBehaviour
                 float parentScaleX = submarineGraphics.localScale.x;
                 interactionUI.transform.localScale = new Vector3(Mathf.Abs(uiScale.x) * Mathf.Sign(parentScaleX), uiScale.y, uiScale.z);
             }
+        }
+        
+        // 4. ĐỒNG BỘ ĐỘ SÁNG ĐÈN TÀU
+        if (submarineLight != null && AtmosphereMaster.Instance != null)
+        {
+            submarineLight.intensity = baseSubLightIntensity * AtmosphereMaster.Instance.GetBrightness();
         }
     }
 
@@ -336,19 +356,45 @@ public class SubmarineStation : MonoBehaviour
     // --- Các hàm hỗ trợ Lưới ---
     public void AddTangledNet()
     {
-        tangledNetsCount = Mathf.Clamp(tangledNetsCount + 1, 0, maxTangledNets);
+        if (tangledNetsCount >= maxTangledNets) return;
+
+        tangledNetsCount++;
         Debug.Log($"<color=red>Tàu bị dính lưới! Tổng số: {tangledNetsCount}/{maxTangledNets}</color>");
         
-        // Có thể thêm hiệu ứng rung lắc ở đây
+        // HIỆN NGẪU NHIÊN 1 CÁI LƯỚI TRÊN THÂN TÀU
+        if (visualNets != null && visualNets.Length > 0)
+        {
+            // Tìm các lưới đang ẩn
+            System.Collections.Generic.List<GameObject> hiddenNets = new System.Collections.Generic.List<GameObject>();
+            foreach (var net in visualNets)
+            {
+                if (net != null && !net.activeSelf) hiddenNets.Add(net);
+            }
+
+            // Bật ngẫu nhiên 1 cái
+            if (hiddenNets.Count > 0)
+            {
+                int randomIndex = Random.Range(0, hiddenNets.Count);
+                hiddenNets[randomIndex].SetActive(true);
+            }
+        }
+
+        // Nếu đủ 5 cái thì khựng lại
+        if (tangledNetsCount >= maxTangledNets)
+        {
+            Debug.Log("<color=orange>⚠️ TÀU ĐÃ BỊ KẸT CỨNG VÌ LƯỚI! CẦN GỠ NGAY!</color>");
+            subRb.velocity = Vector2.zero;
+        }
     }
 
     private void OpenNetRemovalUI()
     {
-        if (netRemovalUIPrefab == null) return;
+        if (netRemovalUI == null) return;
 
-        // Tạo giao diện gỡ lưới
-        GameObject uiObj = Instantiate(netRemovalUIPrefab);
-        NetRemovalUI uiScript = uiObj.GetComponent<NetRemovalUI>();
+        // BẬT BẢNG CÓ SẴN (Không dùng Instantiate)
+        netRemovalUI.SetActive(true);
+        
+        NetRemovalUI uiScript = netRemovalUI.GetComponent<NetRemovalUI>();
         if (uiScript)
         {
             uiScript.Setup(tangledNetsCount, this);
@@ -358,6 +404,13 @@ public class SubmarineStation : MonoBehaviour
     public void ClearNets()
     {
         tangledNetsCount = 0;
+
+        // Ẩn tất cả lưới hình ảnh
+        if (visualNets != null)
+        {
+            foreach (var net in visualNets) if (net) net.SetActive(false);
+        }
+
         Debug.Log("<color=green>Đã gỡ sạch lưới! Tàu hoạt động bình thường.</color>");
     }
 

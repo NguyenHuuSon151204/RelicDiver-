@@ -12,7 +12,6 @@ public class HUDController : MonoBehaviour
     [SerializeField] private SegmentedStatBar batteryBar; // Thanh pin chia vạch mới
     [SerializeField] private TextMeshProUGUI artifactText;
     [SerializeField] private TextMeshProUGUI photoText;
-    [SerializeField] private TextMeshProUGUI currencyText;
 
     [Header("Timer UI")]
     [SerializeField] private TextMeshProUGUI timerText;
@@ -63,6 +62,7 @@ public class HUDController : MonoBehaviour
     [SerializeField] private GameObject settingsPanel;
     [SerializeField] private Slider musicSlider;
     [SerializeField] private Slider sfxSlider;
+    [SerializeField] private Slider brightnessSlider;
     [SerializeField] private Selectable firstButtonPause;
     [SerializeField] private Selectable firstButtonSettings;
     [SerializeField] private GameObject gameplayHUDGroup; // Kéo nhóm các thanh Sliders, Pin, Text vào đây
@@ -90,6 +90,12 @@ public class HUDController : MonoBehaviour
             if (sfxSlider) sfxSlider.value = AudioManager.Instance.GetSFXVolume();
         }
 
+        // Load độ sáng vào Slider
+        if (brightnessSlider != null && AtmosphereMaster.Instance != null)
+        {
+            brightnessSlider.value = AtmosphereMaster.Instance.GetBrightness();
+        }
+
         // Đảm bảo fader ẩn lúc đầu
         if (screenFaderGroup != null)
         {
@@ -100,11 +106,6 @@ public class HUDController : MonoBehaviour
         // Thử tìm Player ngay lúc đầu
         TryFindAndSubscribeToPlayer();
 
-        if (CurrencyManager.Instance != null)
-        {
-            CurrencyManager.Instance.OnCurrencyChanged += UpdateCurrency;
-            UpdateCurrency(CurrencyManager.Instance.GetCurrentCurrency());
-        }
 
         if (LevelManager.Instance != null)
         {
@@ -112,11 +113,11 @@ public class HUDController : MonoBehaviour
             LevelManager.Instance.OnPhotoTaken += UpdatePhotoCount;
             LevelManager.Instance.OnLevelComplete += ShowWinScreen;
 
-            // Initialize Mission Text
-            string mission = $"Objective: Collect {LevelManager.Instance.targetRelics} relics";
-            if (LevelManager.Instance.targetPhotos > 0) mission += $" and take {LevelManager.Instance.targetPhotos} photos";
-            mission += " and return to surface.";
-            UpdateMissionText(mission);
+            // Khởi tạo Text nhiệm vụ ban đầu dựa trên MissionManager nếu có
+            if (MissionManager.Instance == null)
+            {
+                UpdateMissionText("Objective: Find relics and return to surface.");
+            }
 
             // Handle submarine UI
             if (batterySlider != null)
@@ -128,10 +129,10 @@ public class HUDController : MonoBehaviour
             if (batteryBar != null && currentSubmarine == null) 
                 batteryBar.gameObject.SetActive(false);
 
-            // Ban đầu ẩn text ảnh nếu không có nhiệm vụ ảnh
-            if (photoText != null) photoText.gameObject.SetActive(LevelManager.Instance.targetPhotos > 0);
+            // Ban đầu ẩn text ảnh nếu không có nhiệm vụ ảnh (Ảnh đã bị gỡ bỏ mặc định ẩn)
+            if (photoText != null) photoText.gameObject.SetActive(false);
         }
-        else
+        else if (MissionManager.Instance == null)
         {
             UpdateMissionText("Objective: Find relics and return to surface.");
         }
@@ -181,12 +182,18 @@ public class HUDController : MonoBehaviour
         if (pausePanel) pausePanel.SetActive(isPaused);
         if (!isPaused && settingsPanel) settingsPanel.SetActive(false); // Ẩn settings nếu bỏ pause
         
-        // Chọn nút đầu tiên khi pause
-        if (isPaused && firstButtonPause != null) firstButtonPause.Select();
-        
-        // Hiện chuột khi pause để click menu
-        Cursor.visible = isPaused;
-        Cursor.lockState = isPaused ? CursorLockMode.None : CursorLockMode.Locked;
+        // Hiện/Ẩn và Khóa/Mở con trỏ chuột
+        if (isPaused)
+        {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            if (firstButtonPause != null) firstButtonPause.Select();
+        }
+        else
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
 
     public void OpenSettings()
@@ -203,14 +210,33 @@ public class HUDController : MonoBehaviour
 
     public void OnMusicVolumeChanged(float value)
     {
+        Debug.Log($"HUD: Slider Nhạc đang gửi giá trị {value}");
         if (AudioManager.Instance != null)
             AudioManager.Instance.SetMusicVolume(value);
+        else
+            Debug.LogError("HUD LỖI: Không tìm thấy AudioManager Instance!");
     }
 
     public void OnSFXVolumeChanged(float value)
     {
+        Debug.Log($"HUD: Slider SFX đang gửi giá trị {value}");
         if (AudioManager.Instance != null)
             AudioManager.Instance.SetSFXVolume(value);
+        else
+            Debug.LogError("HUD LỖI: Không tìm thấy AudioManager Instance!");
+    }
+
+    public void OnBrightnessChanged(float value)
+    {
+        Debug.Log($"HUD: Slider Độ sáng đang gửi {value}");
+        if (AtmosphereMaster.Instance != null)
+        {
+            AtmosphereMaster.Instance.SetBrightness(value);
+        }
+        else
+        {
+            Debug.LogError("HUD LỖI: Không tìm thấy AtmosphereMaster Instance!");
+        }
     }
 
     private void HandleTimer()
@@ -390,11 +416,11 @@ public class HUDController : MonoBehaviour
     {
         if (LevelManager.Instance == null) return;
         
-        string mission = $"Progress - relics: {LevelManager.Instance.GetCollectedCount()}/{LevelManager.Instance.targetRelics}";
-        if (LevelManager.Instance.targetPhotos > 0)
-        {
-            mission += $" | photos: {LevelManager.Instance.GetTakenPhotosCount()}/{LevelManager.Instance.targetPhotos}";
-        }
+        // Nếu có MissionManager thì để nó tự cập nhật UI, không ghi đè ở đây nữa
+        if (MissionManager.Instance != null) return;
+
+        string mission = $"Progress - relics: {LevelManager.Instance.GetCollectedCount()}/{LevelManager.Instance.GetTargetRelics()}";
+        // Tính năng ảnh đã bị gỡ bỏ
         UpdateMissionText(mission);
     }
 
@@ -426,7 +452,7 @@ public class HUDController : MonoBehaviour
                 string timeStr = string.Format("{0:00}:{1:00}", minutes, seconds);
 
                 int collected = LevelManager.Instance != null ? LevelManager.Instance.GetCollectedCount() : 0;
-                int total = LevelManager.Instance != null ? LevelManager.Instance.targetRelics : 1;
+                int total = LevelManager.Instance != null ? LevelManager.Instance.GetTargetRelics() : 1;
 
                 string details = $"ELAPSED TIME: <color=#FFD700>{timeStr}</color>\n" +
                                  $"RELICS FOUND: <color=#FFD700>{collected}/{total}</color>\n" +
@@ -480,7 +506,7 @@ public class HUDController : MonoBehaviour
 
     private void UpdateCurrency(int amount)
     {
-        if (currencyText) currencyText.text = $"Credits: {amount}";
+        // Đã gỡ bỏ CurrencyManager
     }
 
     public void TriggerPressureWarning()
